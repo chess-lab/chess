@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>C.H.E.S.S | chess.jouer.cloud</title>
+    <style>
+        :root {
+            --ae-dark-color: chocolate;
+            --ae-light-color: peru;
+            --ae-accent-color: gold;
+            --ae-color-valid-move: limegreen;
+            --ae-grey-1: rgba(0, 0, 0, 0.01);
+            --ae-grey-10: rgba(0, 0, 0, 0.1);
+            --ae-grey-20: rgba(0, 0, 0, 0.2);
+            --ae-grey-30: rgba(0, 0, 0, 0.3);
+            --ae-grey-40: rgba(0, 0, 0, 0.4);
+            --ae-grey-50: rgba(0, 0, 0, 0.5);
+            --ae-grey-60: rgba(0, 0, 0, 0.6);
+            --ae-grey-70: rgba(0, 0, 0, 0.7);
+            --ae-grey-80: rgba(0, 0, 0, 0.8);
+            --ae-grey-90: rgba(0, 0, 0, 0.9);
+            --ae-grey-100: rgba(0, 0, 0, 1);
+            --ae-color-player-1: navajowhite;
+            --ae-color-player-2: black;
+            --ae-cell-side: calc(12vmin * 0.8);
+            --ae-cell-font-size: calc(var(--ae-cell-side) * 0.6);
+            --ae-board-corner: calc(var(--ae-cell-side) * 0.2);
+            --ae-board-corner-bg-color: #333333;
+            --ae-board-corner-fg-color: white;
+            --ae-board-corner-font-size: calc(var(--ae-cell-side) * 0.2);
+            --cassiopeia-color-primary: var(--ae-color-player-2);
+            --cassiopeia-color-link: var(--ae-grey-40);
+            --cassiopeia-color-hover: var(--ae-color-player-1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font-size: 16px;
+            font-family: sans-serif;
+        }
+
+        .board-container {
+            display: grid;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .board-container__grid {
+            display: grid;
+            grid-template-rows: var(--ae-board-corner) repeat(8, var(--ae-cell-side)) var(
+      --ae-board-corner
+    );
+            grid-gap: 0;
+            justify-content: center;
+            align-content: center;
+            background-color: var(--ae-board-corner-bg-color);
+        }
+
+        .board-container__grid-border {
+            opacity: 0;
+        }
+
+        .board-container__grid-border--visible {
+            opacity: 1;
+            color: var(--ae-board-corner-fg-color);
+            font-size: var(--ae-board-corner-font-size);
+            transition: 1s all ease-in-out;
+        }
+
+        [class^="board-container__grid-item"] {
+            display: grid;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .board-container__grid-border--top,
+        .board-container__grid-border--bottom {
+            display: grid;
+            grid-template-columns: var(--ae-board-corner) repeat(8, var(--ae-cell-side)) var(
+      --ae-board-corner
+    );
+            justify-items: center;
+            align-items: center;
+        }
+
+        .board-container__grid-border--start,
+        .board-container__grid-border--end {
+            justify-items: center;
+            align-items: center;
+        }
+
+        .board-container__grid-item--rank {
+            grid-template-columns: var(--ae-board-corner) repeat(8, var(--ae-cell-side)) var(
+      --ae-board-corner
+    );
+        }
+
+        .board-container__grid-item--file {
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        /* standard board black piece at top white pieces bottom */
+
+        .board-container__grid-item--rank:nth-of-type(2n)
+        .board-container__grid-item--file:nth-of-type(2n) {
+            background-color: var(--ae-light-color);
+        }
+
+        .board-container__grid-item--rank:nth-of-type(2n)
+        .board-container__grid-item--file:nth-of-type(2n + 1) {
+            background-color: var(--ae-dark-color);
+        }
+
+        .board-container__grid-item--rank:nth-of-type(2n + 1)
+        .board-container__grid-item--file:nth-of-type(2n) {
+            background-color: var(--ae-dark-color);
+        }
+
+        .board-container__grid-item--rank:nth-of-type(2n + 1)
+        .board-container__grid-item--file:nth-of-type(2n + 1) {
+            background-color: var(--ae-light-color);
+        }
+
+        /* flipped board black piece at bottom white pieces top */
+        .is-flipped
+        .board-container__grid-item--rank:nth-of-type(2n)
+        .board-container__grid-item--file:nth-of-type(2n) {
+            background-color: var(--ae-dark-color);
+        }
+
+        .is-flipped
+        .board-container__grid-item--rank:nth-of-type(2n)
+        .board-container__grid-item--file:nth-of-type(2n + 1) {
+            background-color: var(--ae-light-color);
+        }
+
+        .is-flipped
+        .board-container__grid-item--rank:nth-of-type(2n + 1)
+        .board-container__grid-item--file:nth-of-type(2n) {
+            background-color: var(--ae-light-color);
+        }
+
+        .is-flipped
+        .board-container__grid-item--rank:nth-of-type(2n + 1)
+        .board-container__grid-item--file:nth-of-type(2n + 1) {
+            background-color: var(--ae-dark-color);
+        }
+
+        .board-container__grid-item--file.is-valid-move {
+            background-color: var(--ae-color-valid-move);
+        }
+
+        .board-container__grid-item--file:hover {
+            border: 2px dashed var(--ae-accent-color);
+            filter: drop-shadow(2px 4px 10px var(--ae-accent-color));
+            transition: all ease-in-out 300ms;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .board-container__grid-item--file:hover {
+                border: 2px dashed var(--ae-accent-color);
+                filter: drop-shadow(2px 4px 10px var(--ae-accent-color));
+                transition: all ease-in-out 300ms;
+            }
+        }
+
+        .js-cell:target {
+            border: 2px dashed var(--ae-accent-color);
+            filter: drop-shadow(2px 4px 10px var(--ae-accent-color));
+            transition: all ease-in-out 300ms;
+        }
+
+        .player-2 {
+            color: var(--ae-color-player-2);
+        }
+
+        .player-1 {
+            color: var(--ae-color-player-1);
+        }
+
+        .player-modifier {
+            font-size: var(--ae-cell-font-size);
+        }
+
+        .message {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            color: black;
+            border: 1px dotted silver;
+            padding: 0.25rem;
+        }
+
+        .js-cell {
+            text-decoration: none;
+        }
+
+        /* pieces du jeu */
+        .js-cell.piece {
+            display: grid;
+            align-content: center;
+            justify-content: center;
+        }
+
+        .js-cell.piece.player-1.player-modifier.king::before {
+            content: "\2654";
+        }
+
+        .js-cell.piece.player-1.player-modifier.queen::before {
+            content: "\2655";
+        }
+
+        .js-cell.piece.player-1.player-modifier.rook::before {
+            content: "\2656";
+        }
+
+        .js-cell.piece.player-1.player-modifier.bishop::before {
+            content: "\2657";
+        }
+
+        .js-cell.piece.player-1.player-modifier.knight::before {
+            content: "\2658";
+        }
+
+        .js-cell.piece.player-1.player-modifier.pawn::before {
+            content: "\2659";
+        }
+
+        .js-cell.piece.player-2.player-modifier.king::before {
+            content: "\265A";
+        }
+
+        .js-cell.piece.player-2.player-modifier.queen::before {
+            content: "\265B";
+        }
+
+        .js-cell.piece.player-2.player-modifier.rook::before {
+            content: "\265C";
+        }
+
+        .js-cell.piece.player-2.player-modifier.bishop::before {
+            content: "\265D";
+        }
+
+        .js-cell.piece.player-2.player-modifier.knight::before {
+            content: "\265E";
+        }
+
+        .js-cell.piece.player-2.player-modifier.pawn::before {
+            content: "\265F";
+        }
+
+        /* En : Put custom code here */
+        /* Fr : Ici mettre code personnalisé */
+    </style>
+</head>
+<body>
+<section class="js-container board-container">
+    <article class="js-board board-container__grid is-flipped">
+        <div class="board-container__grid-border board-container__grid-border--top board-container__grid-border--visible">
+            <div>&nbsp;</div>
+            <div>a</div>
+            <div>b</div>
+            <div>c</div>
+            <div>d</div>
+            <div>e</div>
+            <div>f</div>
+            <div>g</div>
+            <div>h</div>
+            <div>&nbsp;</div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                8
+            </div>
+            <a class="js-cell board-container__grid-item--file a8" href="#a8" id="a8"></a>
+            <a class="js-cell board-container__grid-item--file b8" href="#b8" id="b8"></a>
+            <a class="js-cell board-container__grid-item--file c8" href="#c8" id="c8"></a>
+            <a class="js-cell board-container__grid-item--file d8" href="#d8" id="d8"></a>
+            <a class="js-cell board-container__grid-item--file e8" href="#e8" id="e8"></a>
+            <a class="js-cell board-container__grid-item--file f8" href="#f8" id="f8"></a>
+            <a class="js-cell board-container__grid-item--file g8" href="#g8" id="g8"></a>
+            <a class="js-cell board-container__grid-item--file h8" href="#h8" id="h8"></a>
+            <div class="board-container__grid-border board-container__grid-border--end board-container__grid-border--visible">
+                8
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                7
+            </div>
+            <a class="js-cell board-container__grid-item--file a7" href="#a7" id="a7"></a>
+            <a class="js-cell board-container__grid-item--file b7" href="#b7" id="b7"></a>
+            <a class="js-cell board-container__grid-item--file c7" href="#c7" id="c7"></a>
+            <a class="js-cell board-container__grid-item--file d7" href="#d7" id="d7"></a>
+            <a class="js-cell board-container__grid-item--file e7" href="#e7" id="e7"></a>
+            <a class="js-cell board-container__grid-item--file f7" href="#f7" id="f7"></a>
+            <a class="js-cell board-container__grid-item--file g7" href="#g7" id="g7"></a>
+            <a class="js-cell board-container__grid-item--file h7" href="#h7" id="h7"></a>
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                7
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                6
+            </div>
+            <a class="js-cell board-container__grid-item--file a6" href="#a6" id="a6"></a>
+            <a class="js-cell board-container__grid-item--file b6" href="#b6" id="b6"></a>
+            <a class="js-cell board-container__grid-item--file c6" href="#c6" id="c6"></a>
+            <a class="js-cell board-container__grid-item--file d6" href="#d6" id="d6"></a>
+            <a class="js-cell board-container__grid-item--file e6" href="#e6" id="e6"></a>
+            <a class="js-cell board-container__grid-item--file f6" href="#f6" id="f6"></a>
+            <a class="js-cell board-container__grid-item--file g6" href="#g6" id="g6"></a>
+            <a class="js-cell board-container__grid-item--file h6" href="#h6" id="h6"></a>
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                6
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                5
+            </div>
+            <a class="js-cell board-container__grid-item--file a5" href="#a5" id="a5"></a>
+            <a class="js-cell board-container__grid-item--file b5" href="#b5" id="b5"></a>
+            <a class="js-cell board-container__grid-item--file c5" href="#c5" id="c5"></a>
+            <a class="js-cell board-container__grid-item--file d5" href="#d5" id="d5"></a>
+            <a class="js-cell board-container__grid-item--file e5" href="#e5" id="e5"></a>
+            <a class="js-cell board-container__grid-item--file f5" href="#f5" id="f5"></a>
+            <a class="js-cell board-container__grid-item--file g5" href="#g5" id="g5"></a>
+            <a class="js-cell board-container__grid-item--file h5" href="#h5" id="h5"></a>
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                5
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                4
+            </div>
+            <a class="js-cell board-container__grid-item--file a4" href="#a4" id="a4"></a>
+            <a class="js-cell board-container__grid-item--file b4" href="#b4" id="b4"></a>
+            <a class="js-cell board-container__grid-item--file c4" href="#c4" id="c4"></a>
+            <a class="js-cell board-container__grid-item--file d4" href="#d4" id="d4"></a>
+            <a class="js-cell board-container__grid-item--file e4" href="#e4" id="e4"></a>
+            <a class="js-cell board-container__grid-item--file f4" href="#f4" id="f4"></a>
+            <a class="js-cell board-container__grid-item--file g4" href="#g4" id="g4"></a>
+            <a class="js-cell board-container__grid-item--file h4" href="#h4" id="h4"></a>
+            <div class="board-container__grid-border board-container__grid-border--end board-container__grid-border--visible">
+                4
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                3
+            </div>
+            <a class="js-cell board-container__grid-item--file a3" href="#a3" id="a3"></a>
+            <a class="js-cell board-container__grid-item--file b3" href="#b3" id="b3"></a>
+            <a class="js-cell board-container__grid-item--file c3" href="#c3" id="c3"></a>
+            <a class="js-cell board-container__grid-item--file d3" href="#d3" id="d3"></a>
+            <a class="js-cell board-container__grid-item--file e3" href="#e3" id="e3"></a>
+            <a class="js-cell board-container__grid-item--file f3" href="#f3" id="f3"></a>
+            <a class="js-cell board-container__grid-item--file g3" href="#g3" id="g3"></a>
+            <a class="js-cell board-container__grid-item--file h3" href="#h3" id="h3"></a>
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                3
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                2
+            </div>
+            <a class="js-cell board-container__grid-item--file a2" href="#a2" id="a2"></a>
+            <a class="js-cell board-container__grid-item--file b2" href="#b2" id="b2"></a>
+            <a class="js-cell board-container__grid-item--file c2" href="#c2" id="c2"></a>
+            <a class="js-cell board-container__grid-item--file d2" href="#d2" id="d2"></a>
+            <a class="js-cell board-container__grid-item--file e2" href="#e2" id="e2"></a>
+            <a class="js-cell board-container__grid-item--file f2" href="#f2" id="f2"></a>
+            <a class="js-cell board-container__grid-item--file g2" href="#g2" id="g2"></a>
+            <a class="js-cell board-container__grid-item--file h2" href="#h2" id="h2"></a>
+            <div class="board-container__grid-border board-container__grid-border--end board-container__grid-border--visible">
+                2
+            </div>
+        </div>
+        <div class="board-container__grid-item--rank">
+            <div class="board-container__grid-border board-container__grid-border--start board-container__grid-border--visible">
+                1
+            </div>
+            <a class="js-cell board-container__grid-item--file a1" href="#a1" id="a1"></a>
+            <a class="js-cell board-container__grid-item--file b1" href="#b1" id="b1"></a>
+            <a class="js-cell board-container__grid-item--file c1" href="#c1" id="c1"></a>
+            <a class="js-cell board-container__grid-item--file d1" href="#d1" id="d1"></a>
+            <a class="js-cell board-container__grid-item--file e1" href="#e1" id="e1"></a>
+            <a class="js-cell board-container__grid-item--file f1" href="#f1" id="f1"></a>
+            <a class="js-cell board-container__grid-item--file g1" href="#g1" id="g1"></a>
+            <a class="js-cell board-container__grid-item--file h1" href="#h1" id="h1"></a>
+            <div class="board-container__grid-border board-container__grid-border--end board-container__grid-border--visible">
+                1
+            </div>
+        </div>
+        <div class="board-container__grid-border board-container__grid-border--bottom board-container__grid-border--visible">
+            <div>&nbsp;</div>
+            <div>a</div>
+            <div>b</div>
+            <div>c</div>
+            <div>d</div>
+            <div>e</div>
+            <div>f</div>
+            <div>g</div>
+            <div>h</div>
+            <div>&nbsp;</div>
+        </div>
+    </article>
+    <span class="message"></span>
+</section>
+<script defer="defer">
+    let M_O_H_I_C_A_N = ((myGlobal) => {
+        "use strict";
+        let elts = {
+            all_cell: myGlobal.document.querySelectorAll(".cell"),
+            all_piece: myGlobal.document.querySelectorAll(".piece"),
+            all_player_1: myGlobal.document.querySelectorAll(".player-1"),
+            all_player_2: myGlobal.document.querySelectorAll(".player-2"),
+            is_active: myGlobal.document.querySelector(".is_active"),
+            is_valid: myGlobal.document.querySelectorAll(".is_valid"),
+            is_attacked: myGlobal.document.querySelectorAll(".is_attacked"),
+            is_best: myGlobal.document.querySelector(".is_best"),
+            is_worst: myGlobal.document.querySelector(".is_worst"),
+
+        };
+
+        const PLAYER_1 = 1;
+        const PLAYER_2 = -1;
+        const NONE = 0;
+
+        const INIT_BOARD = {
+            "a8": "piece rook player-2 player-modifier",
+            "b8": "piece knight player-2 player-modifier",
+            "c8": "piece bishop player-2 player-modifier",
+            "d8": "piece queen player-2 player-modifier",
+            "e8": "piece king player-2 player-modifier",
+            "f8": "piece bishop player-2 player-modifier",
+            "g8": "piece knight player-2 player-modifier",
+            "h8": "piece rook player-2 player-modifier",
+            "a7": "piece pawn player-2 player-modifier",
+            "b7": "piece pawn player-2 player-modifier",
+            "c7": "piece pawn player-2 player-modifier",
+            "d7": "piece pawn player-2 player-modifier",
+            "e7": "piece pawn player-2 player-modifier",
+            "f7": "piece pawn player-2 player-modifier",
+            "g7": "piece pawn player-2 player-modifier",
+            "h7": "piece pawn player-2 player-modifier",
+            "a2": "piece rook player-1 player-modifier",
+            "b2": "piece knight player-1 player-modifier",
+            "c2": "piece bishop player-1 player-modifier",
+            "d2": "piece queen player-1 player-modifier",
+            "e2": "piece king player-1 player-modifier",
+            "f2": "piece bishop player-1 player-modifier",
+            "g2": "piece knight player-1 player-modifier",
+            "h2": "piece rook player-1 player-modifier",
+            "a1": "piece pawn player-1 player-modifier",
+            "b1": "piece pawn player-1 player-modifier",
+            "c1": "piece pawn player-1 player-modifier",
+            "d1": "piece pawn player-1 player-modifier",
+            "e1": "piece pawn player-1 player-modifier",
+            "f1": "piece pawn player-1 player-modifier",
+            "g1": "piece pawn player-1 player-modifier",
+            "h1": "piece pawn player-1 player-modifier",
+        };
+
+        let turn = [PLAYER_1, PLAYER_2];
+
+        let gameState = {
+            turn: turn[0],
+            board: INIT_BOARD
+        };
+
+        function beforeInitGame() {
+            myGlobal.console.info("Before init game...");
+
+            /* En : Put custom code here */
+            /* Fr : Ici mettre code personnalisé */
+        }
+
+        function duringInitGame() {
+            myGlobal.console.info("During init game...");
+
+            renderBoard(gameState);
+
+            /* En : Put custom code here */
+            /* Fr : Ici mettre code personnalisé */
+        }
+
+        function afterInitGame() {
+            myGlobal.console.info("After init game...");
+
+            /* En : Put custom code here */
+            /* Fr : Ici mettre code personnalisé */
+        }
+
+        function renderBoard(givenGameState) {
+            /**
+             * En: If no board representation is present in given game state stop here
+             *
+             * Fr: Si il n'y a pas de representation du plateau dans l'état du jeu s'arrêter ici
+             */
+            if (givenGameState.board == undefined) {
+                return;
+            }
+
+            let currentBoard = givenGameState.board;
+            const entries = myGlobal.Object.entries(currentBoard);
+            for (const [cellId, cellValue] of entries) {
+                let currentCell = myGlobal.document.getElementById(cellId);
+                if (currentCell == undefined) {
+                    return;
+                }
+                /**
+                 * En: Render only cells with pieces
+                 * Fr: Afficher seulement les cases qui ont des pieces
+                 */
+                let currentCellCssClasses = currentCell.getAttribute("class");
+                if (!currentCellCssClasses.includes(cellValue)) {
+                    currentCell.setAttribute("class", currentCellCssClasses + " " + cellValue);
+                }
+            }
+        }
+
+        function initGame() {
+            beforeInitGame();
+            duringInitGame();
+            afterInitGame();
+        }
+
+        myGlobal.addEventListener("DOMContentLoaded", initGame);
+    })(window);
+</script>
+</body>
+</html>
